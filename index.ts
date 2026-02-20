@@ -5,6 +5,21 @@ const Internals = {
     currentLyrics: null
 }
 
+const TOPMOST_STORAGE_KEY = 'cpplyrics-topmost-enabled'
+
+const getTopmostEnabled = () => localStorage.getItem(TOPMOST_STORAGE_KEY) !== '0'
+
+const setTopmostEnabled = (enabled: boolean) => {
+    localStorage.setItem(TOPMOST_STORAGE_KEY, enabled ? '1' : '0')
+}
+
+const applyTopmostState = (enabled: boolean) => {
+    const callResult = betterncm_native.native_plugin.call('cpplyrics.set_topmost', [enabled])
+    if (callResult && typeof callResult.catch === 'function') {
+        callResult.catch(err => console.warn('[CppLyrics] set_topmost not available:', err))
+    }
+}
+
 globalThis.CPPLYRICS_INTERNALS = Internals
 
 plugin.onLoad(pl => {
@@ -17,9 +32,38 @@ plugin.onLoad(pl => {
         wordCloned.title = "打开 CppLyrics"
         ele.appendChild(wordCloned)
 
+        const topmostToggle = document.createElement('span')
+        topmostToggle.style.cssText = `
+            position: absolute;
+            right: 288px;
+            top: 2px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.75);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            z-index: 2;
+        `
+
+        const updateToggleText = () => {
+            topmostToggle.textContent = `顶置:${getTopmostEnabled() ? '开' : '关'}`
+        }
+
+        topmostToggle.onclick = (event) => {
+            event.stopPropagation()
+            const enabled = !getTopmostEnabled()
+            setTopmostEnabled(enabled)
+            updateToggleText()
+            applyTopmostState(enabled)
+        }
+
+        updateToggleText()
+        ele.appendChild(topmostToggle)
+
         wordCloned.onclick = () => {
             wordCloned.remove()
             betterncm_native.native_plugin.call('cpplyrics.init', [])
+            applyTopmostState(getTopmostEnabled())
         }
     })
 
