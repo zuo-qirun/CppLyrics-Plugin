@@ -214,7 +214,8 @@ export function parseLyric(
 			//console.log(JSON.parse(JSON.stringify(originalLyrics)), JSON.parse(JSON.stringify(lyric)));
 			return lyric;
 		}
-		const attachLyricToDynamic = (lyric: LyricPureLine[], field: string) => {
+		type DynamicLyricAttachField = 'translatedLyric' | 'romanLyric' | 'rawLyric';
+		const attachLyricToDynamic = (lyric: LyricPureLine[], field: DynamicLyricAttachField) => {
 			lyric.forEach((line, index) => {
 				let targetIndex = 0;
 				processed.forEach((v, index) => {
@@ -259,11 +260,10 @@ export function parseLyric(
 				const target = processed[targetIndex];
 
 				//console.log(targetIndex, target);
-				target[field] = target[field] || "";
-				if (target[field].length > 0) {
-					target[field] += " ";
-				}
-				target[field] += line.lyric;
+				const currentValue = target[field] ?? "";
+				target[field] = currentValue.length > 0
+					? `${currentValue} ${line.lyric}`
+					: line.lyric;
 			});
 		}
 
